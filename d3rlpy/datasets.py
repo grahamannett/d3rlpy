@@ -3,6 +3,7 @@
 import os
 import random
 import re
+from dataclasses import asdict
 from typing import Any, Dict, Optional, Tuple
 from urllib import request
 
@@ -37,6 +38,7 @@ __all__ = [
     "get_atari",
     "get_atari_transitions",
     "get_d4rl",
+    "get_minari",
     "get_dataset",
 ]
 
@@ -361,9 +363,73 @@ def get_d4rl(
 
         return dataset, TimeLimit(unwrapped_env, max_episode_steps=1000)
     except ImportError as e:
-        raise ImportError(
-            "d4rl is not installed.\n" "$ d3rlpy install d4rl"
-        ) from e
+        raise ImportError("d4rl is not installed.\n" "$ d3rlpy install d4rl") from e
+
+
+def get_minari(
+    env_name: str,
+    transition_picker: Optional[TransitionPickerProtocol] = None,
+    trajectory_slicer: Optional[TrajectorySlicerProtocol] = None,
+    render_mode: Optional[str] = None,
+) -> Tuple[ReplayBuffer, gym.Env[np.ndarray, np.ndarray]]:
+    """Returns minari dataset and envrironment.
+
+    The dataset is provided through minari.
+
+    .. code-block:: python
+
+        from d3rlpy.datasets import get_minari
+
+        dataset, env = get_minari('hopper-medium-v0')
+
+    Args:
+        env_name: environment id of minari dataset.
+        transition_picker: TransitionPickerProtocol object.
+        trajectory_slicer: TrajectorySlicerProtocol object.
+        render_mode: Mode of rendering (``human``, ``rgb_array``).
+
+    Returns:
+        tuple of :class:`d3rlpy.dataset.ReplayBuffer` and gym environment.
+    """
+    try:
+        import minari
+
+        _dataset: minari.MinariDataset = minari.load_dataset(env_name, download=True)
+
+        data = {
+            "observations": [],
+            "actions": [],
+            "rewards": [],
+            "terminations": [],
+            "truncations": [],
+        }
+
+        ep: minari.EpisodeData
+        for ep in _dataset:
+            ep = asdict(ep)
+            for key in data.keys():
+                data[key].append(ep[key])
+
+        dataset = MDPDataset(
+            observations=np.concatenate(data["observations"]),
+            actions=np.concatenate(data["actions"]),
+            rewards=np.concatenate(data["rewards"]),
+            terminals=np.concatenate(data["terminations"]),
+            timeouts=np.concatenate(data["truncations"]),
+            transition_picker=transition_picker,
+            trajectory_slicer=trajectory_slicer,
+        )
+
+        env = _dataset.recover_environment()
+        unwarpped_env = env.unwrapped
+
+        unwarpped_env.render_mode = render_mode
+        return dataset, TimeLimit(
+            unwarpped_env, max_episode_steps=env.spec.max_episode_steps
+        )
+
+    except ImportError as e:
+        raise ImportError("minari is not installed.\n" "$ d3rlpy install minari") from e
 
 
 ATARI_GAMES = [
