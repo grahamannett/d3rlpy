@@ -75,9 +75,7 @@ def stats(path: str) -> None:
 
 @cli.command(short_help="Plot saved metrics (requires matplotlib).")
 @click.argument("path", nargs=-1)
-@click.option(
-    "--window", default=1, show_default=True, help="Moving average window."
-)
+@click.option("--window", default=1, show_default=True, help="Moving average window.")
 @click.option("--show-steps", is_flag=True, help="Use iterations on x-axis.")
 @click.option("--show-max", is_flag=True, help="Show maximum value.")
 @click.option("--label", multiple=True, help="Label in legend.")
@@ -244,9 +242,7 @@ def _exec_to_create_env(code: str) -> gym.Env[Any, Any]:
 @cli.command(short_help="Record episodes with the saved model.")
 @click.argument("model_path")
 @click.option("--env-id", default=None, help="Gym environment id.")
-@click.option(
-    "--env-header", default=None, help="One-liner to create environment."
-)
+@click.option("--env-header", default=None, help="One-liner to create environment.")
 @click.option("--out", default="videos", help="Output directory path.")
 @click.option("--n-episodes", default=3, help="Number of episodes to record.")
 @click.option(
@@ -303,9 +299,7 @@ def record(
 @cli.command(short_help="Run evaluation episodes with rendering.")
 @click.argument("model_path")
 @click.option("--env-id", default=None, help="Gym environment id.")
-@click.option(
-    "--env-header", default=None, help="One-liner to create environment."
-)
+@click.option("--env-header", default=None, help="One-liner to create environment.")
 @click.option("--n-episodes", default=3, help="Number of episodes to run.")
 @click.option(
     "--target-return",
@@ -355,27 +349,19 @@ def play(
 @cli.command(short_help="Install additional packages.")
 @click.argument("name")
 def install(name: str) -> None:
-    if name == "atari":
-        subprocess.run(
-            ["pip3", "install", "-U", "gym[atari,accept-rom-license]"],
-            check=True,
-        )
-    elif name == "d4rl_atari":
-        subprocess.run(["d3rlpy", "install", "atari"], check=True)
-        subprocess.run(
-            ["pip3", "install", "git+https://github.com/takuseno/d4rl-atari"],
-            check=True,
-        )
-    elif name == "d4rl":
-        subprocess.run(
-            [
-                "pip3",
-                "install",
-                "git+https://github.com/Farama-Foundation/D4RL",
-            ],
-            check=True,
-        )
-        subprocess.run(["pip3", "install", "-U", "gym"], check=True)
-        subprocess.run(["pip3", "uninstall", "-y", "pybullet"], check=True)
-    else:
-        raise ValueError(f"Unsupported command: {name}")
+    match name:
+        case "atari":
+            _install_module(["gym[atari,accept-rom-license]"], upgrade=True)
+        case "d4rl_atari":
+            install("atari")
+            _install_module(["git+https://github.com/takuseno/d4rl-atari"])
+        case "d4rl":
+            _install_module(["git+https://github.com/Farama-Foundation/D4RL"])
+            _install_module(["gym"], upgrade=True)
+            _install_module(["-y", "pybullet"], upgrade=True)
+        case _:
+            raise ValueError(f"Unsupported command: {name}")
+
+def _install_module(name: list[str], upgrade: bool = False, check: bool = True) -> None:
+    name = ["-U", *name] if upgrade else name
+    subprocess.run(["pip3", "install", *name], check=check)

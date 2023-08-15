@@ -7,6 +7,7 @@ from dataclasses import asdict
 from typing import Any, Dict, Optional, Tuple
 from urllib import request
 
+import gymnasium
 import gym
 import numpy as np
 from gym.wrappers.time_limit import TimeLimit
@@ -45,9 +46,13 @@ __all__ = [
 DATA_DIRECTORY = "d3rlpy_data"
 DROPBOX_URL = "https://www.dropbox.com/s"
 CARTPOLE_URL = f"{DROPBOX_URL}/uep0lzlhxpi79pd/cartpole_v1.1.0.h5?dl=1"
-CARTPOLE_RANDOM_URL = f"{DROPBOX_URL}/4lgai7tgj84cbov/cartpole_random_v1.1.0.h5?dl=1"  # pylint: disable=line-too-long
+CARTPOLE_RANDOM_URL = (
+    f"{DROPBOX_URL}/4lgai7tgj84cbov/cartpole_random_v1.1.0.h5?dl=1"  # pylint: disable=line-too-long
+)
 PENDULUM_URL = f"{DROPBOX_URL}/ukkucouzys0jkfs/pendulum_v1.1.0.h5?dl=1"
-PENDULUM_RANDOM_URL = f"{DROPBOX_URL}/hhbq9i6ako24kzz/pendulum_random_v1.1.0.h5?dl=1"  # pylint: disable=line-too-long
+PENDULUM_RANDOM_URL = (
+    f"{DROPBOX_URL}/hhbq9i6ako24kzz/pendulum_random_v1.1.0.h5?dl=1"  # pylint: disable=line-too-long
+)
 
 
 def get_cartpole(
@@ -201,9 +206,7 @@ def get_atari(
             env = ChannelFirst(env)
         return dataset, env
     except ImportError as e:
-        raise ImportError(
-            "d4rl-atari is not installed.\n" "$ d3rlpy install d4rl_atari"
-        ) from e
+        raise ImportError("d4rl-atari is not installed.\n" "$ d3rlpy install d4rl_atari") from e
 
 
 def get_atari_transitions(
@@ -300,9 +303,7 @@ def get_atari_transitions(
 
         return dataset, env
     except ImportError as e:
-        raise ImportError(
-            "d4rl-atari is not installed.\n" "$ d3rlpy install d4rl_atari"
-        ) from e
+        raise ImportError("d4rl-atari is not installed.\n" "$ d3rlpy install d4rl_atari") from e
 
 
 def get_d4rl(
@@ -371,7 +372,7 @@ def get_minari(
     transition_picker: Optional[TransitionPickerProtocol] = None,
     trajectory_slicer: Optional[TrajectorySlicerProtocol] = None,
     render_mode: Optional[str] = None,
-) -> Tuple[ReplayBuffer, gym.Env[np.ndarray, np.ndarray]]:
+) -> Tuple[ReplayBuffer, gymnasium.Env[np.ndarray, np.ndarray]]:
     """Returns minari dataset and envrironment.
 
     The dataset is provided through minari.
@@ -380,7 +381,7 @@ def get_minari(
 
         from d3rlpy.datasets import get_minari
 
-        dataset, env = get_minari('hopper-medium-v0')
+        dataset, env = get_minari('door-cloned-v1')
 
     Args:
         env_name: environment id of minari dataset.
@@ -424,9 +425,7 @@ def get_minari(
         unwarpped_env = env.unwrapped
 
         unwarpped_env.render_mode = render_mode
-        return dataset, TimeLimit(
-            unwarpped_env, max_episode_steps=env.spec.max_episode_steps
-        )
+        return dataset, TimeLimit(unwarpped_env, max_episode_steps=env.spec.max_episode_steps)
 
     except ImportError as e:
         raise ImportError("minari is not installed.\n" "$ d3rlpy install minari") from e
